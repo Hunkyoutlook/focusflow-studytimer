@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FocusFlow - Study Timer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  /* Reset — removes default browser spacing */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Colour variables — change these to restyle the whole app */
+  :root {
+    --bg: #0D0F1A;
+    --surface: #151726;
+    --border: rgba(255,255,255,0.07);
+    --accent: #7C6AF7;
+    --text: #F0EEF8;
+    --muted: rgba(240,238,248,0.45);
+  }
+
+  /* Page background and layout */
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .wordmark {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: #A89BFA;
+    margin-bottom: 6px;
+  }
+
+  header h1 {
+    font-size: 36px;
+    font-weight: 700;
+  }
+
+  header p {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* Mode tab buttons */
+  .mode-tabs {
+    display: flex;
+    gap: 6px;
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 5px;
+    margin-bottom: 2rem;
+  }
+
+  .mode-tabs button {
+    padding: 8px 22px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  .mode-tabs button.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* Timer card */
+  .timer-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 24px;
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 360px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  /* Timer display */
+  .ring-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #display {
+    font-family: 'Space Mono', monospace;
+    font-size: 64px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  #mode-label {
+    font-size: 13px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+
+  /* Control buttons */
+  .controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .controls button {
+    padding: 10px 20px;
+    border-radius: 50px;
+    border: 0.5px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'Space Grotesk', sans-serif;
+    cursor: pointer;
+  }
+
+  #play-btn {
+    background: var(--accent);
+    border-color: var(--accent);
+    padding: 12px 32px;
+    font-weight: 600;
+  }
+
+  /* Session dots */
+  #session-dots {
+    display: flex;
+    gap: 8px;
+  }
+
+  .session-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    border: 0.5px solid rgba(255,255,255,0.1);
+  }
+
+  .session-dot.done {
+    background: var(--accent);
+  }
+
+  /* Stats */
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    max-width: 360px;
+    margin-top: 1rem;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+  }
+
+  .stat-card p:first-child {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 4px;
+  }
+
+  .stat-card p:last-child {
+    font-size: 28px;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+  }
+
+  /* Tip and footer */
+  #tip-text {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    max-width: 300px;
+    margin-top: 1rem;
+    line-height: 1.6;
+  }
+
+  footer {
+    margin-top: 3rem;
+    font-size: 12px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <p class="wordmark">FocusFlow</p>
+        <h1>Study Smarter, not longer.</h1>
+        <p>Pomodoro timer built for students</p>
+    </header>
+
+    <!-- Mode buttons -->
+    <div class="mode-tabs">
+        <button id="tab-focus" onclick="switchMode('focus')">Focus</button>
+        <button id="tab-short" onclick="switchMode('short')">Short break</button>
+        <button id="tab-long" onclick="switchMode('long')">Long break</button>
+    </div>
+
+    <!-- Timer Card-->
+    <div class="timer-card">
+
+        <!-- The countdown display-->
+         <div class="ring-wrap">
+            <span id="display">25:00</span>
+            <span id="mode-label">Focus session</span>
+         </div>
+
+         <!-- Controls -->
+          <div class="controls">
+            <button onclick="resetTimer()">Reset</button>
+            <button id="play-btn" onclick="toggleTimer()">Start</button>
+            <button onclick="skipSession()">Skip</button>
+          </div>
+
+          <!-- Session dots-->
+           <div id="session-dots"></div>
+
+    </div>
+
+    <!-- Stats -->
+     <div class="stats-row">
+        <div class="stats-card">
+            <p>Sessions done</p>
+            <p id="sessions-count">0</p>
+        </div>
+
+        <div class="stat-card">
+            <p>Minutes focused</p>
+            <p id="minutes-focused">0</p>
+        </div>
+     </div>
+
+     <!-- Tip Text -->
+    <p id="tip-text">Tip: Stay consistent with your study sessions for best results.</p>
+<!-- Footer -->
+ <Footer>
+    Built by Hunkyoutlook, inspired by the Pomodoro Technique. &copy; 2026 FocusFlow.
+ </Footer>
+
+<script>
+    // --- Settings ---
+    // These are the durations for each mode (in seconds)
+    const MODES = {
+        focus: {label: 'Focus session', seconds: 25 * 60, tip: 'Stay off your phone. Close distractions. you\'ve got this.'},
+        short: {label: 'short break', seconds: 5 * 60, tip: 'Stand up, Stretch, drink some water.'},
+        long: {label: 'Long break', seconds: 15 * 60, tip: 'Great work! Take a proper break - you\'ve earned it.'}
+    };
+
+    // --- STATE ---
+    // These variables track what's happening at any moment
+    let mode = 'focus'; // current mode
+    let totalSecs = 25 * 60; // total seconds for current mode
+    let remaining = totalSecs; //seconds left on the clock
+    let running = false; //is the timer running?
+    let interval = null; //holds the countdown interval
+    let sessionsCompleted = 0; //how many focus sessions done
+    let minutesFocused = 0; //total minutes focused
+
+    // --- GRAB HTML ELEMENTS ---
+    // We connect our JS to the elements we built in HTML
+    const display = document.getElementById('display');
+    const playBtn = document.getElementById('play-btn');
+    const modeLabel = document.getElementById('mode-label');
+    const sessionsDots = documenemt.getElementById('session-dots');
+    const sessionsCount = document.getElementById('sessions-count');
+    const minutesEl = document.getElementById('minutes-focused');
+    const tipText = document.getElementById('tip-text');
+
+    // --- BUILD SESSOIN DOTS ---
+    // Create 4 dots, fills them purple as sessions complete
+    function buildDots() {
+        sessionsDots.innerHTML = '';
+        for (let i = 0; i < 4; i++){
+            const dot = document.createElement('div');
+            dot.className = 'session-dot' + (i < sessionsCompleted % 4 ? ' done' : '');
+            sessionsDots.appendChild(dot);
+        }
+    }
+
+    // --- UPDATE THE CLOCK DISPLAY ---
+    // Converts seconds into MM:SS format
+    function updateDisplay(){
+        const mins = Math.floor(remaining / 60).toString().padStart(2, '0');
+        const secs = (remaining % 60).toString().padStart(2, '0');
+        display.textContent = mins + ':' + secs;
+    }
+
+    // --- SWITCH MODE ---
+    // Called when user clicks Focus /Short break / Long break
+    function switchMode(newMode) {
+        clearInterval(interval);
+        running = false;
+        playBtn.textContent = 'Start';
+
+        mode = newMode;
+        totalSecs = MODES[newMode].seconds;
+        remaining = totalSecs;
+        modeLabel.textContent =  MODES[newMode].label;
+        tipText.textContent = MODES[newMode].tip;
+
+        //Update active tab styling
+        document.querySelectorALL('.mode-tabs button').forEach(btn => {
+            btn.classList.remove('active');
+        })
+        const tabMap = { focus: 'tab-focus', short: 'tab-short', long: 'tab-long' };
+        document.getElementById(tabMap[newMode]).classList.add('active');
+
+        updateDisplay();
+    }
+
+    // --- TOGGLE TIMER (START/PAUSE) ---
+    function toggleTimer() {
+        if(running) {
+            //pause the timer
+            clearInterval(interval);
+            running = false;
+            playBtn.textContent = 'Start';
+        } else{
+            //Start the timer
+            running = true;
+            playBtn.textContent = 'Pause';
+            interval = setInterval(() => {
+                remaining--;
+                updateDisplay();
+                if (remaining <= 0) finisfSessiion();
+            }, 1000);
+        }
+    }
+
+    // --- FINISH SESSION ---
+    function finishSession() {
+        clearInterval(interval);
+        running = false;
+        playBtn.textContent = 'Start';
+
+        if (mode === 'focus') {
+            sessionsCompleted++;
+            mintuesFocused += 25;
+            sessionsCount.textContent = sessionsCompleted;
+            minutesEl.textContent = mintuesFocused;
+            buildDots();
+
+            // Every 4 seesions - long break. otherwise short break
+            if (sessionsCompleted % 4 === 0) switchMode('long');
+            else switchMode('short');
+        } else {
+            switchMode('focus');
+        }
+    }
+
+    //--- RSET TIMER ---
+    function resetTimer() {
+        clearInterval(interval);
+        running = false;
+        playBtn.textContent = 'Start';
+        remaining = totalSecs;
+        updateDisplay();
+    }
+
+    // --- SKIP SESSION ---
+    function skipSession() {
+        finishSession();
+    }
+
+    // --- INITIALSE ---
+    // Run these when the page first loads
+    buildDots();
+    updateDisplay();
+    document.getElementById('tab-focus').classList.add('active');
+</script>
+
+</body>
+</html>
